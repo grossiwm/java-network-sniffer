@@ -5,7 +5,7 @@ import org.pcap4j.packet.Packet;
 import java.net.InetAddress;
 import java.util.Scanner;
 
-public class SnifferApplication {
+public class Sniffer {
 
     public static void main(String[] args) {
 
