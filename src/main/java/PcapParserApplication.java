@@ -1,41 +1,24 @@
-import org.pcap4j.core.NotOpenException;
-import org.pcap4j.core.PcapHandle;
-import org.pcap4j.core.PcapNativeException;
-import org.pcap4j.core.Pcaps;
-import org.pcap4j.packet.Packet;
-import org.pcap4j.packet.TcpPacket;
+import result.SafetyResult;
+import result.TcpConnectionsResult;
+import utils.PcapParserUtils;
 
 public class PcapParserApplication {
 
-    public static void main(String[] args) throws PcapNativeException, NotOpenException {
+    public static void main(String[] args) {
+        PcapParserUtils pcapParserUtils = PcapParserUtils.forPcap("dump.pcap");
 
-        PcapHandle handle = Pcaps.openOffline("dump.pcap");
-        Packet packet;
-        int httpCounter = 0;
-        int httpsCounter = 0;
-        while ((packet = handle.getNextPacket()) != null) {
+        try {
+            SafetyResult safetyResult = pcapParserUtils.getSafetyResult();
+            System.out.println(safetyResult);
 
-            try {
+            TcpConnectionsResult tcpPortsResult = pcapParserUtils.getTcpConnections();
+            System.out.println(tcpPortsResult.getPortsPercentage());
 
-                TcpPacket.TcpHeader transportHeader = (TcpPacket.TcpHeader) packet.getPayload().getPayload().getPayload().getHeader();
-
-                if (transportHeader.getAck() && transportHeader.getSyn()) {
-                    if (transportHeader.getSrcPort().valueAsInt() == 443)
-                        httpsCounter += 1;
-
-                    if (transportHeader.getSrcPort().valueAsInt() == 80)
-                        httpCounter += 1;
-                }
-
-            } catch (Exception e) {
-//                e.printStackTrace();
-            }
-
+//            UdpConnectionsResult udpConnectionsResult = pcapParserUtils.getUdpConnections();
+//            System.out.println(udpConnectionsResult.getPortsCountHashMap());
+//            System.out.println(udpConnectionsResult.getTotalCount());
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        double securePercent = ((double) httpsCounter) / (httpsCounter + httpCounter) * 100;
-        double unsecurePercent = ((double) httpCounter) / (httpsCounter + httpCounter) * 100;
-
-        System.out.println("safe: " + securePercent + " unsafe: " + unsecurePercent);
     }
 }
