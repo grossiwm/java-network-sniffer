@@ -2,12 +2,10 @@ package utils;
 
 import connection.TCPConnection;
 import connection.UDPConnection;
+import connection.OnlyEqualsSet;
+import org.pcap4j.core.*;
 import org.pcap4j.packet.*;
 import result.SafetyResult;
-import org.pcap4j.core.NotOpenException;
-import org.pcap4j.core.PcapHandle;
-import org.pcap4j.core.PcapNativeException;
-import org.pcap4j.core.Pcaps;
 import result.TcpConnectionsResult;
 import result.UdpConnectionsResult;
 
@@ -84,7 +82,7 @@ public class PcapParserUtils {
     public UdpConnectionsResult getUdpConnections() throws PcapNativeException, NotOpenException {
         PcapHandle handle = Pcaps.openOffline(pcapFilePath);
         Packet packet;
-        Set<UDPConnection> connections = new HashSet<>();
+        OnlyEqualsSet connections = new OnlyEqualsSet();
 
         while ((packet = handle.getNextPacket()) != null) {
 
@@ -98,6 +96,8 @@ public class PcapParserUtils {
                 IpV4Packet.IpV4Header networkHeader = (IpV4Packet.IpV4Header) packet.getPayload().getPayload().getHeader();
                 udpConnection.setDstAddr(networkHeader.getDstAddr().toString());
                 udpConnection.setSrcAddr(networkHeader.getSrcAddr().toString());
+
+                udpConnection.setTimestamp(((PcapPacket) packet).getTimestamp());
 
                 connections.add(udpConnection);
 

@@ -1,7 +1,8 @@
 package connection;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 public class UDPConnection {
@@ -11,6 +12,8 @@ public class UDPConnection {
 
     private String srcAddr;
     private String dstAddr;
+
+    private Instant timestamp;
 
     public Integer getSrcPort() {
         return srcPort;
@@ -44,6 +47,14 @@ public class UDPConnection {
         this.dstAddr = dstAddr;
     }
 
+    public Instant getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(Instant timestamp) {
+        this.timestamp = timestamp;
+    }
+
     public Set<Integer> getPortsSet() {
         Set<Integer> portsSet = new HashSet<>();
         portsSet.add(srcPort);
@@ -71,11 +82,10 @@ public class UDPConnection {
         }
 
         UDPConnection conn = (UDPConnection) obj;
-        return conn.getAddressSet().equals(getAddressSet()) && conn.getPortsSet().equals(getPortsSet());
-    }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(getAddressSet(), getPortsSet());
+        Long timeIntervalInMinutes = Math.abs(ChronoUnit.MINUTES.between(conn.getTimestamp(), getTimestamp()));
+
+        return conn.getAddressSet().equals(getAddressSet()) && conn.getPortsSet().equals(getPortsSet())
+                &&  timeIntervalInMinutes < 5;
     }
 }

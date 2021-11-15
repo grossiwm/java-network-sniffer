@@ -1,5 +1,5 @@
 import result.SafetyResult;
-import result.TcpConnectionsResult;
+import result.UdpConnectionsResult;
 import utils.PcapParserUtils;
 
 public class PcapParserApplication {
@@ -11,12 +11,12 @@ public class PcapParserApplication {
             SafetyResult safetyResult = pcapParserUtils.getSafetyResult();
             System.out.println(safetyResult);
 
-            TcpConnectionsResult tcpPortsResult = pcapParserUtils.getTcpConnections();
-            System.out.println(tcpPortsResult.getPortsPercentage());
+//            TcpConnectionsResult tcpPortsResult = pcapParserUtils.getTcpConnections();
+//            System.out.println(tcpPortsResult.getPortsPercentage());
 
-//            UdpConnectionsResult udpConnectionsResult = pcapParserUtils.getUdpConnections();
-//            System.out.println(udpConnectionsResult.getPortsCountHashMap());
-//            System.out.println(udpConnectionsResult.getTotalCount());
+            UdpConnectionsResult udpConnectionsResult = pcapParserUtils.getUdpConnections();
+            System.out.println(udpConnectionsResult.getPortsCountHashMap());
+            System.out.println(udpConnectionsResult.getTotalCount());
         } catch (Exception e) {
             e.printStackTrace();
         }
