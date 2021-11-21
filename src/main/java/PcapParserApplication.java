@@ -1,4 +1,5 @@
 import org.pcap4j.core.PcapNativeException;
+import result.CaptureResults;
 import result.SafetyResult;
 import result.TcpConnectionsResult;
 import result.UdpConnectionsResult;
@@ -23,6 +24,12 @@ public class PcapParserApplication {
 
             UdpConnectionsResult udpConnectionsResult = pcapParserUtils.getUdpConnections();
             System.out.println(udpConnectionsResult.getPortsPercentage());
+
+            CaptureResults captureResults = pcapParserUtils.getCaptureResults();
+            System.out.println(captureResults.getTransmissionRate());
+            System.out.println(captureResults.getNumberOfPackets());
+            System.out.println(captureResults.getLengthCaptured());
+
         } catch (PcapNativeException pne) {
             System.out.println("Couldn´t open pcap file of path " + input);
         } catch (Exception e) {

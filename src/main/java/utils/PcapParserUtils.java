@@ -5,10 +5,13 @@ import connection.UDPConnection;
 import connection.OnlyEqualsSet;
 import org.pcap4j.core.*;
 import org.pcap4j.packet.*;
+import result.CaptureResults;
 import result.SafetyResult;
 import result.TcpConnectionsResult;
 import result.UdpConnectionsResult;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -107,7 +110,28 @@ public class PcapParserUtils {
 
         return new UdpConnectionsResult(connections);
 
-//        Set<Integer> ports = connections.stream().map(c -> c.getSrcPort()).collect(Collectors.toSet());
-//        ports.addAll(connections.stream().map(c -> c.getDstPort()).collect(Collectors.toList()));
     }
+
+    public CaptureResults getCaptureResults() throws PcapNativeException, NotOpenException {
+        PcapHandle handle = Pcaps.openOffline(pcapFilePath);
+
+        PcapPacket packet = handle.getNextPacket();
+        Instant initialTimestamp = packet.getTimestamp();
+        Instant lastTimestamp = handle.getNextPacket().getTimestamp();
+        Long lengthSum = Integer.toUnsignedLong(packet.length());
+        Long numberOfPackets = 1l;
+        CaptureResults captureResults = new CaptureResults();
+
+        while ((packet = handle.getNextPacket()) != null) {
+            lastTimestamp = packet.getTimestamp();
+            lengthSum += Integer.toUnsignedLong(packet.length());
+            numberOfPackets += 1;
+        }
+        captureResults.setBegin(initialTimestamp);
+        captureResults.setEnd(lastTimestamp);
+        captureResults.setLengthCaptured(lengthSum);
+        captureResults.setNumberOfPackets(numberOfPackets);
+        return captureResults;
+    }
+
 }
