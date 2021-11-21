@@ -2,9 +2,7 @@ package result;
 
 import connection.UDPConnection;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class UdpConnectionsResult implements IConnectionsResult {
     public UdpConnectionsResult(Set<UDPConnection> conexoes) {
@@ -24,33 +22,23 @@ public class UdpConnectionsResult implements IConnectionsResult {
 
     @Override
     public HashMap<Integer, Integer> getPortsCountHashMap() {
-        return null;
-    }
-
-    public HashMap<Set<Integer>, Integer> getPortsSetCountHashMap() {
-        HashMap<Set<Integer>, Integer> portsHashMap = new HashMap<>();
-        connections.forEach(c -> {
-            if (portsHashMap.get(c.getPortsSet()) == null)
-                portsHashMap.put(c.getPortsSet(), 0);
-
-            portsHashMap.put(c.getPortsSet(), (portsHashMap.get(c.getPortsSet()))+1);
-            portsHashMap.put(c.getPortsSet(), (portsHashMap.get(c.getPortsSet()))+1);
+        HashMap<Integer, Integer> countMap = new HashMap<>();
+        connections.forEach(connection -> {
+            Optional<Integer> countOp = Optional.ofNullable(countMap.get(connection.getDstPort()));
+            countMap.put(connection.getDstPort(), countOp.orElse(0) + 1);
         });
-        return portsHashMap;
+
+        return countMap;
     }
 
     @Override
     public HashMap<Integer, Integer> getKnownPortsCountHashMap() {
-        HashMap<Integer, Integer> portsCountHashMap = getPortsCountHashMap();
-        portsCountHashMap.entrySet().removeIf(entry -> entry.getKey() > 1023);
-        return portsCountHashMap;
+        return null;
     }
 
     @Override
     public HashMap<Integer, Double> getKnownPortsPercentage() {
-        HashMap<Integer, Double> knownPortsPercentageMap = new HashMap<>();
-        getKnownPortsCountHashMap().forEach((k, v) -> knownPortsPercentageMap.put(k, ((double) v)/getTotalCount()*100));
-        return knownPortsPercentageMap;
+        return null;
     }
 
     @Override
