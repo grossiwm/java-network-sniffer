@@ -1,9 +1,12 @@
 import org.pcap4j.core.*;
 import org.pcap4j.packet.Packet;
 import org.pcap4j.util.LinkLayerAddress;
+import utils.FileUtils;
+import utils.StringUtils;
 
 import java.net.InetAddress;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.concurrent.TimeoutException;
 
@@ -25,13 +28,21 @@ public class SnifferApplication {
                 int humanIndex = i+1;
 
                 String name = device.getName();
+                String description = device.getDescription();
 
                 InetAddress ipAddress = null;
                 InetAddress netmask = null;
 
                 if (device.getAddresses().size()>0) {
-                    ipAddress  = device.getAddresses().get(0).getAddress();
-                    netmask = device.getAddresses().get(0).getNetmask();
+                    Optional<PcapAddress> ipv4Address = device.getAddresses().stream().filter(a-> a instanceof PcapIpV4Address).findFirst();
+                    if (ipv4Address.isPresent()) {
+                        ipAddress = ipv4Address.get().getAddress();
+                        netmask = ipv4Address.get().getNetmask();
+                    } else {
+                        ipAddress  = device.getAddresses().get(0).getAddress();
+                        netmask = device.getAddresses().get(0).getNetmask();
+                    }
+
                 }
 
                 LinkLayerAddress macAddress = null;
@@ -40,7 +51,7 @@ public class SnifferApplication {
                     macAddress = device.getLinkLayerAddresses().get(0);
                 }
 
-                System.out.println(humanIndex + " - Name: " + name + " | IP Address: " + ipAddress + " | Netmask: " + netmask + " | MAC Address: " + macAddress + "\n");
+                System.out.println(humanIndex + " - Name: " + name + " | Description: " + description +" | IP Address: " + ipAddress + " | Netmask: " + netmask + " | MAC Address: " + macAddress + "\n");
             }
 
             System.out.print("Type the name or IP of the selected Network Interface:");
@@ -64,7 +75,7 @@ public class SnifferApplication {
 
             try (PcapHandle handle = nif.openLive(snapLen, mode, timeout)) {
 
-                try (PcapDumper dumper = handle.dumpOpen("dump.pcap")) {
+                try (PcapDumper dumper = handle.dumpOpen(FileUtils.getDumpFileName())) {
                     while (true) {
 
                         try {
