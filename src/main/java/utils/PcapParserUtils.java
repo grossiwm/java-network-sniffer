@@ -5,10 +5,7 @@ import connection.UDPConnection;
 import connection.OnlyEqualsSet;
 import org.pcap4j.core.*;
 import org.pcap4j.packet.*;
-import result.CaptureResults;
-import result.SafetyResult;
-import result.TcpConnectionsResult;
-import result.UdpConnectionsResult;
+import result.*;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -132,6 +129,41 @@ public class PcapParserUtils {
         captureResults.setLengthCaptured(lengthSum);
         captureResults.setNumberOfPackets(numberOfPackets);
         return captureResults;
+    }
+
+    public PerSecondRateResult calculateRatePerSecond(int secondsDenominator) throws NotOpenException, PcapNativeException {
+        PcapHandle handle = Pcaps.openOffline(pcapFilePath);
+
+        PerSecondRateResult result = new PerSecondRateResult();
+
+
+        PcapPacket firstPacketOfIndex = handle.getNextPacket();
+        int sum = firstPacketOfIndex.length();
+
+        PerSecondRateResult.Coordinate coordinate;
+
+        PcapPacket packet;
+
+        int index = 0;
+
+        coordinate = new PerSecondRateResult.Coordinate(new PerSecondRateResult.X(index), new PerSecondRateResult.Y(sum));
+
+        result.addCordinate(coordinate);
+
+        while ((packet = handle.getNextPacket()) != null) {
+
+            sum += packet.length();
+            if (ChronoUnit.SECONDS.between(firstPacketOfIndex.getTimestamp(), packet.getTimestamp()) >= secondsDenominator) {
+
+                 coordinate = new PerSecondRateResult.Coordinate(new PerSecondRateResult.X(++index), new PerSecondRateResult.Y(sum));
+
+                result.addCordinate(coordinate);
+
+                firstPacketOfIndex = packet;
+            }
+        }
+
+        return null;
     }
 
 }
