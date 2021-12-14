@@ -14,50 +14,55 @@ public class SnifferApplication {
 
     public static void main(String[] args) {
 
-
-
         try {
 
-            List<PcapNetworkInterface> devices =  Pcaps.findAllDevs();
+            String input;
 
-            System.out.print("Network Interfaces:\n");
+            if (args.length > 0) {
+                input = args[0];
+            } else {
+                List<PcapNetworkInterface> devices =  Pcaps.findAllDevs();
 
-            for (int i=0; i< devices.size(); i++) {
+                System.out.print("Network Interfaces:\n");
 
-                PcapNetworkInterface device = devices.get(i);
-                int humanIndex = i+1;
+                for (int i=0; i< devices.size(); i++) {
 
-                String name = device.getName();
-                String description = device.getDescription();
+                    PcapNetworkInterface device = devices.get(i);
+                    int humanIndex = i+1;
 
-                InetAddress ipAddress = null;
-                InetAddress netmask = null;
+                    String name = device.getName();
+                    String description = device.getDescription();
 
-                if (device.getAddresses().size()>0) {
-                    Optional<PcapAddress> ipv4Address = device.getAddresses().stream().filter(a-> a instanceof PcapIpV4Address).findFirst();
-                    if (ipv4Address.isPresent()) {
-                        ipAddress = ipv4Address.get().getAddress();
-                        netmask = ipv4Address.get().getNetmask();
-                    } else {
-                        ipAddress  = device.getAddresses().get(0).getAddress();
-                        netmask = device.getAddresses().get(0).getNetmask();
+                    InetAddress ipAddress = null;
+                    InetAddress netmask = null;
+
+                    if (device.getAddresses().size()>0) {
+                        Optional<PcapAddress> ipv4Address = device.getAddresses().stream().filter(a-> a instanceof PcapIpV4Address).findFirst();
+                        if (ipv4Address.isPresent()) {
+                            ipAddress = ipv4Address.get().getAddress();
+                            netmask = ipv4Address.get().getNetmask();
+                        } else {
+                            ipAddress  = device.getAddresses().get(0).getAddress();
+                            netmask = device.getAddresses().get(0).getNetmask();
+                        }
+
                     }
 
+                    LinkLayerAddress macAddress = null;
+
+                    if (device.getLinkLayerAddresses().size()>0) {
+                        macAddress = device.getLinkLayerAddresses().get(0);
+                    }
+
+                    System.out.println(humanIndex + " - Name: " + name + " | Description: " + description +" | IP Address: " + ipAddress + " | Netmask: " + netmask + " | MAC Address: " + macAddress + "\n");
                 }
 
-                LinkLayerAddress macAddress = null;
+                System.out.print("Type the name or IP of the selected Network Interface:");
 
-                if (device.getLinkLayerAddresses().size()>0) {
-                    macAddress = device.getLinkLayerAddresses().get(0);
-                }
-
-                System.out.println(humanIndex + " - Name: " + name + " | Description: " + description +" | IP Address: " + ipAddress + " | Netmask: " + netmask + " | MAC Address: " + macAddress + "\n");
+                Scanner scan = new Scanner(System.in);
+                input = scan.nextLine();
             }
 
-            System.out.print("Type the name or IP of the selected Network Interface:");
-
-            Scanner scan = new Scanner(System.in);
-            String input = scan.nextLine();
             InetAddress addr;
             PcapNetworkInterface nif;
 
