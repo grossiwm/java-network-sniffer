@@ -6,11 +6,22 @@ public class SafetyResult {
         this.httpCount = httpCount;
     }
 
+    public SafetyResult() {
+    }
+
     private int httpsCount;
     private int httpCount;
 
     public int getHttpsCount() {
         return httpsCount;
+    }
+
+    public void setHttpsCount(int httpsCount) {
+        this.httpsCount = httpsCount;
+    }
+
+    public void setHttpCount(int httpCount) {
+        this.httpCount = httpCount;
     }
 
     public int getHttpCount() {

@@ -1,5 +1,7 @@
 package connection;
 
+import enums.Shift;
+
 public class TCPConnection {
 
     private Integer srcPort;
@@ -7,6 +9,16 @@ public class TCPConnection {
 
     private String srcAddr;
     private String dstAddr;
+
+    private Shift shift;
+
+    public Shift getShift() {
+        return shift;
+    }
+
+    public void setShift(Shift shift) {
+        this.shift = shift;
+    }
 
     public Integer getSrcPort() {
         return srcPort;

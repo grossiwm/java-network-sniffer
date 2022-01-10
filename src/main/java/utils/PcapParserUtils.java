@@ -3,12 +3,15 @@ package utils;
 import connection.TCPConnection;
 import connection.UDPConnection;
 import connection.OnlyEqualsSet;
+import enums.Shift;
 import org.pcap4j.core.*;
 import org.pcap4j.packet.*;
 import result.*;
 
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -50,6 +53,55 @@ public class PcapParserUtils {
         return new SafetyResult(httpsCounter, httpCounter);
     }
 
+    public SafetyResults getSafetyResultByShift() throws NotOpenException, PcapNativeException {
+        SafetyResults safetyResults = new SafetyResults();
+        safetyResults.addResult(new SafetyResultByShift(Shift.MORNING));
+        safetyResults.addResult(new SafetyResultByShift(Shift.EVENING));
+        safetyResults.addResult(new SafetyResultByShift(Shift.NIGHT));
+        safetyResults.addResult(new SafetyResultByShift(Shift.DAWN));
+        SafetyResult safetyResult = new SafetyResult();
+        PcapHandle handle = Pcaps.openOffline(pcapFilePath);
+        Packet packet;
+        int httpCounter = 0;
+        int httpsCounter = 0;
+        while ((packet = handle.getNextPacket()) != null) {
+
+            try {
+
+                TcpPacket.TcpHeader transportHeader = (TcpPacket.TcpHeader) packet.getPayload().getPayload().getPayload().getHeader();
+                Instant timestamp = ((PcapPacket) packet).getTimestamp();
+                if (transportHeader.getAck() && transportHeader.getSyn()) {
+
+                    SafetyResultByShift safetyResultByShift = safetyResults.getResults().stream().map(r -> (SafetyResultByShift) r)
+                            .filter(r -> r.getShift().equals(getShift(timestamp))).findFirst().get();
+
+                    if (transportHeader.getSrcPort().valueAsInt() == 443) {
+                        httpsCounter += 1;
+
+                        safetyResultByShift.setHttpsCount(safetyResultByShift.getHttpsCount() + 1);
+
+                    }
+
+                    if (transportHeader.getSrcPort().valueAsInt() == 80) {
+                        httpCounter += 1;
+
+                        safetyResultByShift.setHttpCount(safetyResultByShift.getHttpCount() + 1);
+                    }
+                }
+
+            } catch (Exception e) {}
+
+        }
+        safetyResults.addResult(new SafetyResult(httpsCounter, httpCounter));
+
+        return safetyResults;
+    }
+
+    private Shift getShift(Instant timestamp) {
+        int hour = timestamp.atZone(ZoneId.of("America/Sao_Paulo")).getHour();
+        return Arrays.stream(Shift.values()).filter(s -> hour >= s.getStart() && hour < s.getEnd()).findFirst().get();
+    }
+
     public TcpConnectionsResult getTcpConnections() throws NotOpenException, PcapNativeException {
         PcapHandle handle = Pcaps.openOffline(pcapFilePath);
         Packet packet;
@@ -68,6 +120,7 @@ public class PcapParserUtils {
                     connection.setSrcAddr(networkHeader.getSrcAddr().toString());
                     connection.setDstPort(transportHeader.getDstPort().valueAsInt());
                     connection.setSrcPort(transportHeader.getSrcPort().valueAsInt());
+                    connection.setShift(getShift(((PcapPacket)packet).getTimestamp()));
                     connections.add(connection);
                 }
 
@@ -97,7 +150,9 @@ public class PcapParserUtils {
                 udpConnection.setDstAddr(networkHeader.getDstAddr().toString());
                 udpConnection.setSrcAddr(networkHeader.getSrcAddr().toString());
 
-                udpConnection.setTimestamp(((PcapPacket) packet).getTimestamp());
+                Instant timestamp = ((PcapPacket) packet).getTimestamp();
+                udpConnection.setTimestamp(timestamp);
+                udpConnection.setShift(getShift(timestamp));
 
                 connections.add(udpConnection);
 

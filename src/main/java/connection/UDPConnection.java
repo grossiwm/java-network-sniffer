@@ -1,5 +1,7 @@
 package connection;
 
+import enums.Shift;
+
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
@@ -12,6 +14,16 @@ public class UDPConnection {
 
     private String srcAddr;
     private String dstAddr;
+
+    private Shift shift;
+
+    public Shift getShift() {
+        return shift;
+    }
+
+    public void setShift(Shift shift) {
+        this.shift = shift;
+    }
 
     private Instant timestamp;
 
