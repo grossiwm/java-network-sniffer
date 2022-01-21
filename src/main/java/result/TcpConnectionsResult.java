@@ -3,8 +3,6 @@ package result;
 import connection.TCPConnection;
 import enums.Shift;
 
-import java.time.Instant;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -37,6 +35,7 @@ public class TcpConnectionsResult implements IConnectionsResult {
         final HashMap<Integer, Integer> eveningPortsHashMap = new HashMap<>();
         final HashMap<Integer, Integer> nightPortsHashMap = new HashMap<>();
         final HashMap<Integer, Integer> dawnPortsHashMap = new HashMap<>();
+
         connections.forEach(c -> {
             HashMap<Integer, Integer> portsHashMap;
             Shift shift = c.getShift();
@@ -52,7 +51,12 @@ public class TcpConnectionsResult implements IConnectionsResult {
             portsHashMap.putIfAbsent(c.getSrcPort(), 0);
             portsHashMap.put(c.getSrcPort(), portsHashMap.get(c.getSrcPort()) + 1);
         });
+
         return Arrays.asList(morningPortsHashMap, eveningPortsHashMap, nightPortsHashMap, dawnPortsHashMap);
+    }
+
+    private long getCountByShift(Shift shift) {
+        return connections.stream().filter(c -> c.getShift().equals(shift)).count();
     }
 
     @Override

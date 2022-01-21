@@ -6,6 +6,10 @@ public class PerSecondRateResult {
 
     private ArrayList<Coordinate> coordinates;
 
+    public double getAverage() {
+        return coordinates.stream().mapToDouble(c->c.y.getValue()).sum()/coordinates.size();
+    }
+
     public PerSecondRateResult() {
         coordinates = new ArrayList<>();
     }
@@ -16,13 +20,13 @@ public class PerSecondRateResult {
 
     public static class X {
 
-        public X(double value) {
+        public X(int value) {
             this.value = value;
         }
 
-        private final double value;
+        private final int value;
 
-        public double getValue() {
+        public int getValue() {
             return value;
         }
 

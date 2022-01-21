@@ -18,8 +18,18 @@ public class SafetyResultByShift extends SafetyResult{
         this.shift = shift;
     }
 
+    private long connCount;
+
+    public long getConnCount() {
+        return connCount;
+    }
+
+    public void setConnCount(long connCount) {
+        this.connCount = connCount;
+    }
+
     @Override
     public String toString() {
-        return this.getShift() + " --> " +  super.toString();
+        return this.getShift() + " --> " +  super.toString() + "\nnumber of connections: " + this.connCount;
     }
 }

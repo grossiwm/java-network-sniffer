@@ -1,4 +1,6 @@
 .idea
 target
 *.iml
-dump.pcap
+*.pcap
+*.pcapng
+*.csv

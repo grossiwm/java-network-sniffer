@@ -1,19 +1,24 @@
 package utils;
 
+import connection.OnlyEqualsSet;
 import connection.TCPConnection;
 import connection.UDPConnection;
-import connection.OnlyEqualsSet;
 import enums.Shift;
 import org.pcap4j.core.*;
-import org.pcap4j.packet.*;
+import org.pcap4j.packet.IpV4Packet;
+import org.pcap4j.packet.Packet;
+import org.pcap4j.packet.TcpPacket;
+import org.pcap4j.packet.UdpPacket;
 import result.*;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class PcapParserUtils {
 
@@ -87,6 +92,8 @@ public class PcapParserUtils {
 
                         safetyResultByShift.setHttpCount(safetyResultByShift.getHttpCount() + 1);
                     }
+
+                    safetyResultByShift.setConnCount(safetyResultByShift.getConnCount()+1);
                 }
 
             } catch (Exception e) {}
@@ -186,7 +193,66 @@ public class PcapParserUtils {
         return captureResults;
     }
 
-    public PerSecondRateResult calculateRatePerSecond(int secondsDenominator) throws NotOpenException, PcapNativeException {
+    public static List<RatesIntervalResult> generateRatesIntervalResults() throws NotOpenException, PcapNativeException {
+        File captureFolder = new File("files/youtube");
+        List<File> captureFiles = Arrays.asList(Objects.requireNonNull(captureFolder.listFiles()));
+        List<RatesIntervalResult> ratesIntervalResults = new ArrayList<>();
+        PcapParserUtils pcapParserUtils;
+
+        for (File f : captureFiles) {
+            pcapParserUtils = new PcapParserUtils(f.getPath());
+
+            ratesIntervalResults.add(pcapParserUtils.generateRatesIntervalResult());
+
+        }
+
+        return ratesIntervalResults;
+    }
+
+    public RatesIntervalResult generateRatesIntervalResult() throws NotOpenException, PcapNativeException {
+        double rate = this.getCaptureResults().getTransmissionRate();
+        PcapHandle handle = Pcaps.openOffline(pcapFilePath);
+
+        long intervalBelowRate = 0;
+        long intervalAboveRate = 0;
+
+        long aboveRatesLength = 0;
+        long belowRatesLength = 0;
+
+        double sum = 0;
+
+        PcapPacket packet = handle.getNextPacket();
+        PcapPacket firstPacketOfIndex = packet;
+         do {
+
+            sum += packet.length();
+            long interval = ChronoUnit.SECONDS.between(firstPacketOfIndex.getTimestamp(), packet.getTimestamp());
+            if (interval >= 1) {
+
+                if (sum/interval >= rate) {
+                    intervalAboveRate+=interval;
+                    aboveRatesLength += sum;
+                } else {
+                    intervalBelowRate+=interval;
+                    belowRatesLength += sum;
+                }
+
+                firstPacketOfIndex = packet;
+                sum =0;
+            }
+        } while ((packet = handle.getNextPacket()) != null);
+
+         RatesIntervalResult result = new RatesIntervalResult();
+         result.setAboveRateInterval(intervalAboveRate);
+         result.setBelowRateInterval(intervalBelowRate);
+         result.setAverageBelowRate(((double) belowRatesLength)/intervalBelowRate);
+         result.setAverageAboveRate(((double) aboveRatesLength)/intervalAboveRate);
+         result.setAverateRate(rate);
+
+         return result;
+    }
+
+    public PerSecondRateResult generatePerSecondResult(int secondsDenominator) throws PcapNativeException, NotOpenException {
         PcapHandle handle = Pcaps.openOffline(pcapFilePath);
 
         PerSecondRateResult result = new PerSecondRateResult();
@@ -204,21 +270,43 @@ public class PcapParserUtils {
         coordinate = new PerSecondRateResult.Coordinate(new PerSecondRateResult.X(index), new PerSecondRateResult.Y(sum));
 
         result.addCordinate(coordinate);
-
+        sum = 0;
         while ((packet = handle.getNextPacket()) != null) {
 
             sum += packet.length();
             if (ChronoUnit.SECONDS.between(firstPacketOfIndex.getTimestamp(), packet.getTimestamp()) >= secondsDenominator) {
 
-                 coordinate = new PerSecondRateResult.Coordinate(new PerSecondRateResult.X(++index), new PerSecondRateResult.Y(sum));
+                coordinate = new PerSecondRateResult.Coordinate(new PerSecondRateResult.X(++index), new PerSecondRateResult.Y(sum));
 
                 result.addCordinate(coordinate);
 
                 firstPacketOfIndex = packet;
+                sum =0;
             }
         }
 
-        return null;
+        return result;
+
+    }
+
+    public static void generateRatesIntervalCsv(List<RatesIntervalResult> results) {
+        File file = new File("files/outputs/rates-interval.csv");
+
+        try (FileWriter fw = new FileWriter(file, true);
+             BufferedWriter bf = new BufferedWriter(fw)
+        ) {
+            results.forEach(r -> {
+                try {
+                    bf.write(r.toString());
+                    bf.newLine();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 }
