@@ -209,6 +209,65 @@ public class PcapParserUtils {
         return ratesIntervalResults;
     }
 
+    public static List<AvgIntervalResult> generateAVGIntervalsAboveRateResults() throws NotOpenException, PcapNativeException {
+        File captureFolder = new File("files/youtube");
+        List<File> captureFiles = Arrays.asList(Objects.requireNonNull(captureFolder.listFiles()));
+        List<AvgIntervalResult> intervalResults = new ArrayList<>();
+        PcapParserUtils pcapParserUtils;
+        for (File f : captureFiles) {
+            pcapParserUtils = new PcapParserUtils(f.getPath());
+            intervalResults.add(pcapParserUtils.getAverageTimeOfIntervalsAboveRate());
+        }
+
+        return intervalResults;
+    }
+
+    public AvgIntervalResult getAverageTimeOfIntervalsAboveRate() throws NotOpenException, PcapNativeException {
+        double avgRateDuringBelowAvgRate = 2193.0;
+        PcapHandle handle = Pcaps.openOffline(pcapFilePath);
+
+        PcapPacket packet = handle.getNextPacket();
+        PcapPacket firstPacketOfSecond = packet;
+
+        long sumSecond = firstPacketOfSecond.length();
+        long interval;
+        double currentRate;
+
+        long timeSum = 0;
+        long aboveCount = 0;
+
+        boolean lastIsAbove = false;
+        boolean isAbove;
+
+        while ((packet = handle.getNextPacket()) != null) {
+            sumSecond += packet.length();
+            interval = ChronoUnit.SECONDS.between(firstPacketOfSecond.getTimestamp(), packet.getTimestamp());
+
+            if (interval >= 1) {
+                currentRate = ((double) sumSecond)/interval;
+
+                if (currentRate > avgRateDuringBelowAvgRate) {
+                    isAbove = true;
+                } else {
+                    isAbove = false;
+                }
+
+                if (isAbove) {
+                    timeSum += interval;
+                    if (!lastIsAbove) {
+                        aboveCount += 1;
+                    }
+                }
+
+                lastIsAbove = isAbove;
+                firstPacketOfSecond = packet;
+                sumSecond = 0;
+            }
+        }
+
+        return new AvgIntervalResult((((double) timeSum)/aboveCount), timeSum, aboveCount);
+    }
+
     public RatesIntervalResult generateRatesIntervalResult() throws NotOpenException, PcapNativeException {
         double rate = this.getCaptureResults().getTransmissionRate();
         PcapHandle handle = Pcaps.openOffline(pcapFilePath);
@@ -291,6 +350,26 @@ public class PcapParserUtils {
 
     public static void generateRatesIntervalCsv(List<RatesIntervalResult> results) {
         File file = new File("files/outputs/rates-interval.csv");
+
+        try (FileWriter fw = new FileWriter(file, true);
+             BufferedWriter bf = new BufferedWriter(fw)
+        ) {
+            results.forEach(r -> {
+                try {
+                    bf.write(r.toString());
+                    bf.newLine();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void generateAverageTimesCsv(List<AvgIntervalResult> results) {
+        File file = new File("files/outputs/average-times.csv");
 
         try (FileWriter fw = new FileWriter(file, true);
              BufferedWriter bf = new BufferedWriter(fw)
