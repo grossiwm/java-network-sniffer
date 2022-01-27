@@ -296,7 +296,7 @@ public class PcapParserUtils {
                     belowRatesLength += sum;
                 }
 
-                firstPacketOfIndex = handle.getNextPacket();
+                firstPacketOfIndex = packet;
                 sum =0;
             }
         } while ((packet = handle.getNextPacket()) != null);
