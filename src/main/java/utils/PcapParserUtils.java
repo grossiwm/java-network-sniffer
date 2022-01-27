@@ -223,7 +223,7 @@ public class PcapParserUtils {
     }
 
     public AvgIntervalResult getAverageTimeOfIntervalsAboveRate() throws NotOpenException, PcapNativeException {
-        double avgRateDuringBelowAvgRate = 2193.0;
+        double avgRateDuringBelowAvgRate = this.generateRatesIntervalResult().getAverageBelowRate();
         PcapHandle handle = Pcaps.openOffline(pcapFilePath);
 
         PcapPacket packet = handle.getNextPacket();
@@ -296,7 +296,7 @@ public class PcapParserUtils {
                     belowRatesLength += sum;
                 }
 
-                firstPacketOfIndex = packet;
+                firstPacketOfIndex = handle.getNextPacket();
                 sum =0;
             }
         } while ((packet = handle.getNextPacket()) != null);
